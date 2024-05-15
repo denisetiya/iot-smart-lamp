@@ -1,6 +1,6 @@
 # Project Name
 
-Short Project Description Here
+Mini Project by Deni Setiya
 
 ## Description
 
@@ -26,8 +26,8 @@ This project is an IoT system that allows users to wirelessly control lights via
 
 ## Installation
 
-1. Clone this repository: `git clone https://github.com/username/repository-name.git`
-2. Navigate to the project directory: `cd repository-name`
+1. Clone this repository: `git clone https://github.com/denisetiya/iot-smart-lamp.git`
+2. Navigate to the project directory: `cd iot-smart-lamp`
 3. Install dependencies: `npm install`
 4. Set up required environment variables in the `.env` file.
 
