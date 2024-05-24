@@ -1,4 +1,4 @@
-import  { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import Chart from "react-apexcharts";
 import {
@@ -8,134 +8,184 @@ import {
   Typography,
 } from "@material-tailwind/react";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom"
-
+import { useNavigate } from "react-router-dom";
+import Lottie from "lottie-react";
+import Loading from "../assets/loading.json";
 export default function Consumption() {
   const navigate = useNavigate();
+
   useEffect(() => {
-    { localStorage.getItem('email') ? null : navigate('/login') }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[])
-  const [data, setData] = useState([]);
+    if (!localStorage.getItem("email")) {
+      navigate("/login");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const [dailyData, setDailyData] = useState([]);
+  const [monthlyData, setMonthlyData] = useState([]);
+  const [currentPowerUsage, setCurrentPowerUsage] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get(
+        const powerUsageResponse = await axios.get(
           `${import.meta.env.VITE_API_URL}/power-usage`
         );
-        if (!response) {
-          throw new Error("Gagal mengambil data");
+        const dailyPowerUsageResponse = await axios.get(
+          `${import.meta.env.VITE_API_URL}/daily-power-usage`
+        );
+        const monthlyPowerUsageResponse = await axios.get(
+          `${import.meta.env.VITE_API_URL}/monthly-power-usage`
+        );
+
+
+        if (
+          powerUsageResponse &&
+          powerUsageResponse.data &&
+          powerUsageResponse.data.data
+        ) {
+          setCurrentPowerUsage(
+            powerUsageResponse.data.data._sum.current_mA || 0
+          );
         }
-        setData(response.data.data);
+
+        if (
+          dailyPowerUsageResponse &&
+          dailyPowerUsageResponse.data &&
+          dailyPowerUsageResponse.data.data
+        ) {
+          setDailyData(dailyPowerUsageResponse.data.data);
+        }
+
+        if (
+          monthlyPowerUsageResponse &&
+          monthlyPowerUsageResponse.data &&
+          monthlyPowerUsageResponse.data.data
+        ) {
+          setMonthlyData(monthlyPowerUsageResponse.data.data);
+        }
       } catch (error) {
         console.error(error.message);
+      } finally {
+        setLoading(false);
       }
     };
     fetchData();
   }, []);
 
-  const calculateTotalPowerInThreeHours = () => {
-    const now = new Date();
-    const threeHoursAgo = new Date(now.getTime() - 3 * 60 * 60 * 1000);
-    const dataInThreeHours = data.filter((item) => {
-      const timestamp = new Date(item.timestamp);
-      return timestamp >= threeHoursAgo && timestamp <= now;
-    });
+  
+  const dailyChartData =
+    dailyData.length > 0
+      ? dailyData.map((item) => ({
+          x: new Date(item.timestamp).toLocaleDateString(),
+          y: item.totalPowerUsage,
+        }))
+      : [];
 
-    const totalPowerInThreeHours = dataInThreeHours.reduce(
-      (total, item) => total + item.current_mA,
-      0
-    );
+      
 
-    return totalPowerInThreeHours;
-  };
+ 
+  const monthlyChartData =
+    monthlyData.length > 0
+      ? monthlyData.map((item) => ({
+          x: new Date(item.timestamp).toLocaleDateString(),
+          y: item.totalPowerUsage,
+        }))
+      : [];
 
-  // Konfigurasi Chart
-  const chartConfig = {
-    type: "line",
-    height: 240,
+      const dailyChartConfig = {
+        series: [
+          {
+            name: "Daily Power Usage",
+            data: dailyChartData,
+          },
+        ],
+        options: {
+          chart: {
+            type: "line",
+            height: 350,
+            toolbar: {
+              show: false,
+            },
+          },
+          title: {
+            text: "Konsumsi Daya Harian",
+            align: "left",
+          },
+          xaxis: {
+            type: "category",
+            categories: dailyChartData.map((item) => {
+              // Parse the timestamp string and extract the hour and minute
+              const timestamp = new Date(item.x);
+              const hour = timestamp.getHours().toString().padStart(2, '0');
+              const minute = timestamp.getMinutes().toString().padStart(2, '0');
+              return `${hour}:${minute}`;
+            }),
+          },
+          yaxis: {
+            title: {
+              text: "Total Power Usage (mA)",
+            },
+          },
+          tooltip: {
+            x: {
+              format: "HH:mm",
+            },
+          },
+        },
+      };
+      
+      
+
+  const monthlyChartConfig = {
     series: [
       {
-        name: "Power Usage",
-        data: data.map((item) => item.current_mA),
+        name: "Monthly Power Usage",
+        data: monthlyChartData,
       },
     ],
     options: {
       chart: {
+        type: "line",
+        height: 350,
         toolbar: {
           show: false,
         },
       },
       title: {
-        show: "",
-      },
-      dataLabels: {
-        enabled: false,
-      },
-      colors: ["#020617"],
-      stroke: {
-        lineCap: "round",
-        curve: "smooth",
-      },
-      markers: {
-        size: 0,
+        text: "Konsumsi Daya Bulanan",
+        align: "left",
       },
       xaxis: {
-        axisTicks: {
-          show: false,
-        },
-        axisBorder: {
-          show: false,
-        },
+        type: "datetime",
         labels: {
-          style: {
-            colors: "#616161",
-            fontSize: "12px",
-            fontFamily: "inherit",
-            fontWeight: 400,
-          },
+          format: "MMM yyyy",
         },
-        categories: data.map((item) => {
-          const date = new Date(item.timestamp);
-          return date.getHours();
-        }),
       },
       yaxis: {
-        labels: {
-          style: {
-            colors: "#616161",
-            fontSize: "12px",
-            fontFamily: "inherit",
-            fontWeight: 400,
-          },
+        title: {
+          text: "Total Power Usage (mA)",
         },
-      },
-      grid: {
-        show: true,
-        borderColor: "#dddddd",
-        strokeDashArray: 5,
-        xaxis: {
-          lines: {
-            show: true,
-          },
-        },
-        padding: {
-          top: 5,
-          right: 20,
-        },
-      },
-      fill: {
-        opacity: 0.8,
       },
       tooltip: {
-        theme: "dark",
+        x: {
+          format: "MMM yyyy",
+        },
       },
     },
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Lottie animationData={Loading} loop={true} />
+      </div>
+    );
+  }
+
   return (
-    <div>
+    <div className="flex flex-col gap-4 mx-2 ">
       <Card>
         <CardHeader
           floated={false}
@@ -150,33 +200,19 @@ export default function Consumption() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
               >
-                Consumption
-              </motion.p>
-            </Typography>
-            <Typography
-              variant="small"
-              color="gray"
-              className="max-w-sm font-normal"
-            >
-              <motion.p
-                initial={{ opacity: 0, x: -100 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-              >
-                Daily consumption
+                Current power use
               </motion.p>
             </Typography>
           </div>
         </CardHeader>
-        <CardBody className="px-2 pb-0">
+        <CardBody className="px-2 py-10">
           <motion.div
             initial={{ opacity: 0, y: 100 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <Typography variant="body1">
-              Total Power Usage in the Last 3 Hours:{" "}
-              {calculateTotalPowerInThreeHours()} mA
+            <Typography variant="paragraph">
+              Total Power Use Today: {currentPowerUsage} mA
             </Typography>
           </motion.div>
         </CardBody>
@@ -194,36 +230,78 @@ export default function Consumption() {
               <motion.p
                 initial={{ opacity: 0, x: -100 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
               >
-                Consumption
-              </motion.p>
-            </Typography>
-            <Typography
-              variant="small"
-              color="gray"
-              className="max-w-sm font-normal"
-            >
-              <motion.p
-                initial={{ opacity: 0, x: -100 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.5 }}
-              >
-                Monthly consumption
+                Daily power consumption
               </motion.p>
             </Typography>
           </div>
         </CardHeader>
-        <CardBody className="px-2 pb-0">
-          <motion.div
-            initial={{ opacity: 0, y: 100 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
-          >
-            <Chart {...chartConfig} />
-          </motion.div>
+        <CardBody className="px-2 py-10">
+          {loading ? (
+            <Typography variant="paragraph">Loading...</Typography>
+          ) : dailyChartData.length > 0 ? (
+            <motion.div
+              initial={{ opacity: 0, y: 100 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              <Chart
+                options={dailyChartConfig.options}
+                series={dailyChartConfig.series}
+                type="line"
+                height={350}
+              />
+            </motion.div>
+          ) : (
+            <Typography variant="paragraph">No data is available.</Typography>
+          )}
         </CardBody>
       </Card>
+
+      <Card>
+        <CardHeader
+          floated={false}
+          shadow={false}
+          color="transparent"
+          className="flex flex-col gap-4 rounded-none md:flex-row md:items-center"
+        >
+          <div>
+            <Typography variant="h6" color="blue-gray">
+              <motion.p
+                initial={{ opacity: 0, x: -100 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+              >
+                Monthly power consumption
+              </motion.p>
+            </Typography>
+          </div>
+        </CardHeader>
+        <CardBody className="px-2 pb-10">
+          {loading ? (
+            <Typography variant="paragraph">Loading...</Typography>
+          ) : monthlyChartData.length > 0 ? (
+            <motion.div
+              initial={{ opacity: 0, y: 100 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              <Chart
+                options={monthlyChartConfig.options}
+                series={monthlyChartConfig.series}
+                type="line"
+                height={350}
+              />
+            </motion.div>
+          ) : (
+            <Typography variant="paragraph">No data is available.</Typography>
+          )}
+        </CardBody>
+      </Card>
+      <div className="mt-20">
+        
+      </div>
     </div>
   );
 }

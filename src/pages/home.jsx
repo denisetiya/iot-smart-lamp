@@ -17,6 +17,7 @@ function Home() {
   const lottieRef = useRef(null);
  
   useEffect(() => {
+
     const fetchData = async () => {
       try {
         const datas = await axios.get(`${import.meta.env.VITE_API_URL}/status`);
@@ -79,6 +80,7 @@ function Home() {
           {isOn ? 'On' : 'Off'}
         </Button>
       </motion.div>
+      
     </div>
   );
 }
