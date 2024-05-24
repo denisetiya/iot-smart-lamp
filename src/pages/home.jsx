@@ -58,7 +58,7 @@ function Home() {
   }, [isOn]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[95%]">
+    <div className="flex flex-col items-center justify-center min-h-[99%]">
       <motion.div initial={{ opacity: 0}} animate={{ opacity: 1}} transition={{ duration: 2, delay: 1 }} className='text-xl font-bold transition-all duration-100 delay-75'>
         {isOn ? 'Smart Lamp is On' : 'Smart Lamp is Off'}
       </motion.div>
