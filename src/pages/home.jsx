@@ -67,7 +67,7 @@ function Home() {
           lottieRef={lottieRef}
           animationData={Lamp} 
           loop={false} 
-          className="w-80" 
+          className="w-75" 
         />
       </motion.div>
       <motion.div initial={{ opacity: 0, y: 100}} animate={{ opacity: 1, y: 0}} transition={{ duration: 1, delay: 0.5 }} >
