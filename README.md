@@ -22,7 +22,8 @@ This project is an IoT system that allows users to wirelessly control lights via
 
 ## Flow Diagram
 
-![Flow Diagram](link to flow diagram)
+cooming soon
+
 
 ## Installation
 
