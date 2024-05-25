@@ -10,6 +10,7 @@ function Schedule() {
   const navigate = useNavigate();
   useEffect(() => {
     { localStorage.getItem('email') ? null : navigate('/login') }
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[])
   const lottieRef = useRef();
