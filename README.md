@@ -1,4 +1,4 @@
-# Project Name
+# IOT SMART LAMP
 
 Mini Project by Deni Setiya
 
