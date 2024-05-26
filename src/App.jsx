@@ -4,7 +4,7 @@ import Login  from "./pages/login"
 import Notfound from "./pages/notfound"
 import Consumption from "./pages/consumption"
 import Schedule from "./pages/schedule"
-
+import AboutApp from "./pages/about"
 
 function App() {
   
@@ -15,7 +15,7 @@ function App() {
       <Route Component={Login} path="/login" />
       <Route Component={Consumption} path="/consumption" />
       <Route Component={Schedule} path="/schedule" />
-
+      <Route Component={AboutApp} path="/about" />
       <Route Component={Notfound} path="*" />
     </Routes>
   )

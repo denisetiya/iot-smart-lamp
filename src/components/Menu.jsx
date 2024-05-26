@@ -11,6 +11,7 @@ import {
   HomeIcon,
   ClockIcon,
   PresentationChartLineIcon,
+  ExclamationCircleIcon
 } from "@heroicons/react/24/outline"; 
 import { Link } from "react-router-dom";
 
@@ -51,6 +52,12 @@ export default function Menu() {
               <Link to="/consumption">              
                 <PresentationChartLineIcon className="w-5 h-5" />
                 <Typography {...labelProps} >Consumption</Typography>
+              </Link>
+            </SpeedDialAction>
+            <SpeedDialAction className="relative">
+              <Link to="/About">              
+                <ExclamationCircleIcon className="w-5 h-5" />
+                <Typography {...labelProps} >About App</Typography>
               </Link>
             </SpeedDialAction>
           </SpeedDialContent>

@@ -9,8 +9,8 @@ import { useNavigate } from "react-router-dom"
 function Schedule() {
   const navigate = useNavigate();
   useEffect(() => {
-    { localStorage.getItem('email') ? null : navigate('/login') }
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    { localStorage.getItem('email') ? null : navigate('/login') }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[])
   const lottieRef = useRef();
