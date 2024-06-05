@@ -11,6 +11,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import Lottie from "lottie-react";
 import Loading from "../assets/loading.json";
+
 export default function Consumption() {
   const navigate = useNavigate();
 
@@ -38,7 +39,6 @@ export default function Consumption() {
         const monthlyPowerUsageResponse = await axios.get(
           `${import.meta.env.VITE_API_URL}/monthly-power-usage`
         );
-
 
         if (
           powerUsageResponse &&
@@ -74,69 +74,65 @@ export default function Consumption() {
     fetchData();
   }, []);
 
-  
+  const formatDate = (timestamp) => {
+    const options = { day: '2-digit', month: 'short', year: 'numeric' };
+    return new Date(timestamp).toLocaleDateString('id-ID', options);
+  };
+
   const dailyChartData =
     dailyData.length > 0
       ? dailyData.map((item) => ({
-          x: new Date(item.timestamp).toLocaleDateString(),
+          x: formatDate(item.timestamp),
           y: item.totalPowerUsage,
         }))
       : [];
 
-      
-
- 
   const monthlyChartData =
     monthlyData.length > 0
       ? monthlyData.map((item) => ({
-          x: new Date(item.timestamp).toLocaleDateString(),
+          x: formatDate(item.timestamp),
           y: item.totalPowerUsage,
         }))
       : [];
 
-      const dailyChartConfig = {
-        series: [
-          {
-            name: "Daily Power Usage",
-            data: dailyChartData,
-          },
-        ],
-        options: {
-          chart: {
-            type: "line",
-            height: 350,
-            toolbar: {
-              show: false,
-            },
-          },
-          title: {
-            text: "Konsumsi Daya Harian",
-            align: "left",
-          },
-          xaxis: {
-            type: "category",
-            categories: dailyChartData.map((item) => {
-              // Parse the timestamp string and extract the hour and minute
-              const timestamp = new Date(item.x);
-              const hour = timestamp.getHours().toString().padStart(2, '0');
-              const minute = timestamp.getMinutes().toString().padStart(2, '0');
-              return `${hour}:${minute}`;
-            }),
-          },
-          yaxis: {
-            title: {
-              text: "Total Power Usage (mA)",
-            },
-          },
-          tooltip: {
-            x: {
-              format: "HH:mm",
-            },
-          },
+  // Log the data to ensure it is correct
+  console.log("Monthly Chart Data:", monthlyChartData);
+
+  const dailyChartConfig = {
+    series: [
+      {
+        name: "Daily Power Usage",
+        data: dailyChartData,
+      },
+    ],
+    options: {
+      chart: {
+        type: "line",
+        height: 350,
+        toolbar: {
+          show: false,
         },
-      };
-      
-      
+      },
+      title: {
+        text: "Konsumsi Daya Harian",
+        align: "left",
+      },
+      xaxis: {
+        type: "category",
+        categories: dailyChartData.map((item) => item.x),
+      },
+      yaxis: {
+        title: {
+          text: "Total Power Usage (mA)",
+        },
+      },
+      tooltip: {
+        x: {
+          format: "dd MMM yyyy",
+        },
+      },
+    },
+  };
 
   const monthlyChartConfig = {
     series: [
@@ -158,10 +154,8 @@ export default function Consumption() {
         align: "left",
       },
       xaxis: {
-        type: "datetime",
-        labels: {
-          format: "MMM yyyy",
-        },
+        type: "category",
+        categories: monthlyChartData.map((item) => item.x),
       },
       yaxis: {
         title: {
@@ -170,7 +164,7 @@ export default function Consumption() {
       },
       tooltip: {
         x: {
-          format: "MMM yyyy",
+          format: "dd MMM yyyy",
         },
       },
     },
@@ -299,9 +293,7 @@ export default function Consumption() {
           )}
         </CardBody>
       </Card>
-      <div className="mt-20">
-        
-      </div>
+      <div className="mt-20"></div>
     </div>
   );
 }
