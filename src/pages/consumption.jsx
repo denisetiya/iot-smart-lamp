@@ -1,6 +1,16 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import Chart from "react-apexcharts";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
+import { Line } from "react-chartjs-2";
 import {
   Card,
   CardHeader,
@@ -11,6 +21,16 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import Lottie from "lottie-react";
 import Loading from "../assets/loading.json";
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 export default function Consumption() {
   const navigate = useNavigate();
@@ -65,6 +85,7 @@ export default function Consumption() {
         ) {
           setMonthlyData(monthlyPowerUsageResponse.data.data);
         }
+      
       } catch (error) {
         console.error(error.message);
       } finally {
@@ -74,97 +95,95 @@ export default function Consumption() {
     fetchData();
   }, []);
 
-  const formatDate = (timestamp) => {
-    const options = { day: '2-digit', month: 'short', year: 'numeric' };
+  const formatDateTime = (timestamp) => {
+    const options = { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' };
+    return new Date(timestamp).toLocaleString('id-ID', options);
+  };
+
+  const formatMonth = (timestamp) => {
+    const options = { month: 'short', year: 'numeric' };
     return new Date(timestamp).toLocaleDateString('id-ID', options);
   };
 
-  const dailyChartData =
-    dailyData.length > 0
-      ? dailyData.map((item) => ({
-          x: formatDate(item.timestamp),
-          y: item.totalPowerUsage,
-        }))
-      : [];
-
-  const monthlyChartData =
-    monthlyData.length > 0
-      ? monthlyData.map((item) => ({
-          x: formatDate(item.timestamp),
-          y: item.totalPowerUsage,
-        }))
-      : [];
-
-  // Log the data to ensure it is correct
-  console.log("Monthly Chart Data:", monthlyChartData);
-
-  const dailyChartConfig = {
-    series: [
+  const dailyChartData = {
+    labels: dailyData.map((item) => formatDateTime(item.timestamp)),
+    datasets: [
       {
-        name: "Daily Power Usage",
-        data: dailyChartData,
+        label: "Daily Power Usage",
+        data: dailyData.map((item) => item.totalPowerUsage),
+        fill: false,
+        backgroundColor: "rgba(75,192,192,0.2)",
+        borderColor: "rgba(75,192,192,1)",
       },
     ],
-    options: {
-      chart: {
-        type: "line",
-        height: 350,
-        toolbar: {
-          show: false,
-        },
+  };
+
+  const groupMonthlyData = (data) => {
+    const groupedData = data.reduce((acc, item) => {
+      const month = formatMonth(item.timestamp);
+      if (!acc[month]) {
+        acc[month] = 0;
+      }
+      acc[month] += item.totalPowerUsage;
+      return acc;
+    }, {});
+
+    return Object.keys(groupedData).map((month) => ({
+      month,
+      totalPowerUsage: groupedData[month],
+    }));
+  };
+
+  const groupedMonthlyData = groupMonthlyData(monthlyData);
+
+  const monthlyChartData = {
+    labels: groupedMonthlyData.map((item) => item.month),
+    datasets: [
+      {
+        label: "Monthly Power Usage",
+        data: groupedMonthlyData.map((item) => item.totalPowerUsage),
+        fill: false,
+        backgroundColor: "rgba(153,102,255,0.2)",
+        borderColor: "rgba(153,102,255,1)",
+      },
+    ],
+  };
+
+  const chartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        display: true,
+        position: "top",
       },
       title: {
-        text: "Konsumsi Daya Harian",
-        align: "left",
-      },
-      xaxis: {
-        type: "category",
-        categories: dailyChartData.map((item) => item.x),
-      },
-      yaxis: {
-        title: {
-          text: "Total Power Usage (mA)",
-        },
+        display: true,
+        text: "Power Usage",
       },
       tooltip: {
-        x: {
-          format: "dd MMM yyyy",
+        callbacks: {
+          label: function (context) {
+            return `${context.label}: ${context.raw} mA`;
+          },
+          title: function (context) {
+            const timestamp = dailyData[context[0].dataIndex].timestamp;
+            return formatDateTime(timestamp);
+          },
         },
       },
     },
-  };
-
-  const monthlyChartConfig = {
-    series: [
-      {
-        name: "Monthly Power Usage",
-        data: monthlyChartData,
-      },
-    ],
-    options: {
-      chart: {
-        type: "line",
-        height: 350,
-        toolbar: {
-          show: false,
-        },
-      },
-      title: {
-        text: "Konsumsi Daya Bulanan",
-        align: "left",
-      },
-      xaxis: {
+    scales: {
+      x: {
         type: "category",
-        categories: monthlyChartData.map((item) => item.x),
-      },
-      yaxis: {
         title: {
-          text: "Total Power Usage (mA)",
+          display: true,
+          text: "Date",
         },
       },
-      tooltip: {
-        x: {
-          format: "dd MMM yyyy",
+      y: {
+        title: {
+          display: true,
+          text: "Total Power Usage (mA)",
         },
       },
     },
@@ -179,7 +198,7 @@ export default function Consumption() {
   }
 
   return (
-    <div className="flex flex-col gap-4 mx-2 ">
+    <div className="flex flex-col gap-4 mx-2">
       <Card>
         <CardHeader
           floated={false}
@@ -234,17 +253,24 @@ export default function Consumption() {
         <CardBody className="px-2 py-10">
           {loading ? (
             <Typography variant="paragraph">Loading...</Typography>
-          ) : dailyChartData.length > 0 ? (
+          ) : dailyData.length > 0 ? (
             <motion.div
               initial={{ opacity: 0, y: 100 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
             >
-              <Chart
-                options={dailyChartConfig.options}
-                series={dailyChartConfig.series}
-                type="line"
-                height={350}
+              <Line
+                data={dailyChartData}
+                options={{
+                  ...chartOptions,
+                  plugins: {
+                    ...chartOptions.plugins,
+                    title: {
+                      display: true,
+                      text: "Konsumsi Daya Harian",
+                    },
+                  },
+                }}
               />
             </motion.div>
           ) : (
@@ -275,17 +301,24 @@ export default function Consumption() {
         <CardBody className="px-2 pb-10">
           {loading ? (
             <Typography variant="paragraph">Loading...</Typography>
-          ) : monthlyChartData.length > 0 ? (
+          ) : monthlyData.length > 0 ? (
             <motion.div
               initial={{ opacity: 0, y: 100 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
             >
-              <Chart
-                options={monthlyChartConfig.options}
-                series={monthlyChartConfig.series}
-                type="line"
-                height={350}
+              <Line
+                data={monthlyChartData}
+                options={{
+                  ...chartOptions,
+                  plugins: {
+                    ...chartOptions.plugins,
+                    title: {
+                      display: true,
+                      text: "Konsumsi Daya Bulanan",
+                    },
+                  },
+                }}
               />
             </motion.div>
           ) : (
@@ -297,3 +330,4 @@ export default function Consumption() {
     </div>
   );
 }
+
