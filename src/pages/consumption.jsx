@@ -34,6 +34,7 @@ ChartJS.register(
 
 export default function Consumption() {
   const navigate = useNavigate();
+  const voltage = 220; // Assuming a fixed voltage of 220V
 
   useEffect(() => {
     if (!localStorage.getItem("email")) {
@@ -66,7 +67,7 @@ export default function Consumption() {
           powerUsageResponse.data.data
         ) {
           setCurrentPowerUsage(
-            powerUsageResponse.data.data._sum.current_mA || 0
+            (powerUsageResponse.data.data._sum.current_mA || 0) * voltage / 1000
           );
         }
 
@@ -75,7 +76,10 @@ export default function Consumption() {
           dailyPowerUsageResponse.data &&
           dailyPowerUsageResponse.data.data
         ) {
-          setDailyData(dailyPowerUsageResponse.data.data);
+          setDailyData(dailyPowerUsageResponse.data.data.map(item => ({
+            ...item,
+            totalPowerUsage: item.totalPowerUsage * voltage / 1000
+          })));
         }
 
         if (
@@ -83,7 +87,10 @@ export default function Consumption() {
           monthlyPowerUsageResponse.data &&
           monthlyPowerUsageResponse.data.data
         ) {
-          setMonthlyData(monthlyPowerUsageResponse.data.data);
+          setMonthlyData(monthlyPowerUsageResponse.data.data.map(item => ({
+            ...item,
+            totalPowerUsage: item.totalPowerUsage * voltage / 1000
+          })));
         }
       
       } catch (error) {
@@ -105,12 +112,48 @@ export default function Consumption() {
     return new Date(timestamp).toLocaleDateString('id-ID', options);
   };
 
+  const formatHour = (timestamp) => {
+    const options = { hour: '2-digit' };
+    return new Date(timestamp).toLocaleTimeString('id-ID', options);
+  };
+
+  const groupDailyData = (data) => {
+    const groupedData = [];
+    let currentGroup = null;
+
+    data.forEach((item) => {
+      const date = new Date(item.timestamp);
+      const hour = date.getHours();
+
+      if (!currentGroup || (hour % 4 === 0 && hour !== currentGroup.hour)) {
+        if (currentGroup) {
+          groupedData.push(currentGroup);
+        }
+        currentGroup = {
+          hour: hour,
+          totalPowerUsage: 0,
+          timestamp: item.timestamp,
+        };
+      }
+
+      currentGroup.totalPowerUsage += item.totalPowerUsage;
+    });
+
+    if (currentGroup) {
+      groupedData.push(currentGroup);
+    }
+
+    return groupedData;
+  };
+
+  const groupedDailyData = groupDailyData(dailyData);
+
   const dailyChartData = {
-    labels: dailyData.map((item) => formatDateTime(item.timestamp)),
+    labels: groupedDailyData.map((item) => formatHour(item.timestamp)),
     datasets: [
       {
         label: "Daily Power Usage",
-        data: dailyData.map((item) => item.totalPowerUsage),
+        data: groupedDailyData.map((item) => item.totalPowerUsage),
         fill: false,
         backgroundColor: "rgba(75,192,192,0.2)",
         borderColor: "rgba(75,192,192,1)",
@@ -163,7 +206,7 @@ export default function Consumption() {
       tooltip: {
         callbacks: {
           label: function (context) {
-            return `${context.label}: ${context.raw} mA`;
+            return `${context.label}: ${context.raw} W`;
           },
           title: function (context) {
             const timestamp = dailyData[context[0].dataIndex].timestamp;
@@ -177,13 +220,13 @@ export default function Consumption() {
         type: "category",
         title: {
           display: true,
-          text: "Date",
+          text: "Date, Month, Year",
         },
       },
       y: {
         title: {
           display: true,
-          text: "Total Power Usage (mA)",
+          text: "Total Power Usage (W)",
         },
       },
     },
@@ -225,7 +268,7 @@ export default function Consumption() {
             transition={{ duration: 0.5, delay: 0.2 }}
           >
             <Typography variant="paragraph">
-              Total Power Use Today: {currentPowerUsage} mA
+              Total Power Use Today: {currentPowerUsage} W
             </Typography>
           </motion.div>
         </CardBody>
@@ -330,4 +373,3 @@ export default function Consumption() {
     </div>
   );
 }
-
