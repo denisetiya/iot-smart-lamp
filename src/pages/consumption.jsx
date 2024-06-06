@@ -220,7 +220,7 @@ export default function Consumption() {
         type: "category",
         title: {
           display: true,
-          text: "Date, Month, Year",
+          text: "Date",
         },
       },
       y: {
